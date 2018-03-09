@@ -5,6 +5,7 @@ import static com.github.messenger4j.MessengerPlatform.MODE_REQUEST_PARAM_NAME;
 import static com.github.messenger4j.MessengerPlatform.SIGNATURE_HEADER_NAME;
 import static com.github.messenger4j.MessengerPlatform.VERIFY_TOKEN_REQUEST_PARAM_NAME;
 
+import com.cap.service.BasicAuthRestTemplate;
 import com.github.messenger4j.MessengerPlatform;
 import com.github.messenger4j.exceptions.MessengerApiException;
 import com.github.messenger4j.exceptions.MessengerIOException;
@@ -35,6 +36,9 @@ import com.github.messenger4j.send.templates.GenericTemplate;
 import com.github.messenger4j.send.templates.ReceiptTemplate;
 import java.util.Date;
 import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,7 +153,11 @@ public class MessengerPlatformCallbackHandler {
 
             try {
                 switch (messageText.toLowerCase()) {
-                    case "image":
+                	case "brad":
+                		sendTextMessage(senderId);
+                		break;
+                	
+                	case "image":
                         sendImageMessage(senderId);
                         break;
 
@@ -212,6 +220,23 @@ public class MessengerPlatformCallbackHandler {
         };
     }
 
+    private void sendTextMessage(String recipientId) throws MessengerApiException, MessengerIOException {
+    	BasicAuthRestTemplate restTemplate = new BasicAuthRestTemplate("summituser", "abcd");
+		ResponseEntity<String> jsonresult = restTemplate.getForEntity("http://54.195.246.137/bin/trainingServlet?query=cards", String.class);
+		
+		JSONObject jsonObject = new JSONObject(jsonresult);
+		String bodyObj = (String)jsonObject.get("body");		
+		JSONObject bObject = new JSONObject(bodyObj);		
+		JSONArray jArray = (JSONArray)bObject.get("creditcards");		
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<jArray.length();i++) {
+			String s = (String)jArray.getJSONObject(i).get("product_name");
+			sb.append(s).append(",");
+		}
+		
+    	this.sendClient.sendTextMessage(recipientId, sb.toString());
+    }
+    
     private void sendImageMessage(String recipientId) throws MessengerApiException, MessengerIOException {
         this.sendClient.sendImageAttachment(recipientId, RESOURCE_URL + "/assets/rift.png");
     }
